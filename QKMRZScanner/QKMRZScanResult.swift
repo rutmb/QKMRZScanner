@@ -8,19 +8,19 @@
 import Foundation
 import QKMRZParser
 
-public class QKMRZScanResult {
-    public let documentImage: UIImage
-    public let documentType: String
-    public let countryCode: String
-    public let surnames: String
-    public let givenNames: String
-    public let documentNumber: String
-    public let nationality: String
-    public let birthDate: Date?
-    public let sex: String?
-    public let expiryDate: Date?
-    public let personalNumber: String
-    public let personalNumber2: String?
+public class QKMRZScanResult: NSObject {
+    @objc public let documentImage: UIImage
+    @objc public let documentType: String
+    @objc public let countryCode: String
+    @objc public let surnames: String
+    @objc public let givenNames: String
+    @objc public let documentNumber: String
+    @objc public let nationality: String
+    @objc public let birthDate: Date?
+    @objc public let sex: String?
+    @objc public let expiryDate: Date?
+    @objc public let personalNumber: String
+    @objc public let personalNumber2: String?
     
     public lazy fileprivate(set) var faceImage: UIImage? = {
         guard let documentImage = CIImage(image: documentImage) else {

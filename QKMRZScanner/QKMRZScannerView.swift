@@ -12,7 +12,7 @@ import QKMRZParser
 import AudioToolbox
 import Vision
 
-public protocol QKMRZScannerViewDelegate: class {
+public protocol QKMRZScannerViewDelegate: AnyObject {
     func mrzScannerView(_ mrzScannerView: QKMRZScannerView, didFind scanResult: QKMRZScanResult)
 }
 
@@ -28,6 +28,7 @@ public class QKMRZScannerView: UIView {
     fileprivate var observer: NSKeyValueObservation?
     @objc public dynamic var isScanning = false
     public var vibrateOnResult = true
+    public var stopOnResult = true
     public weak var delegate: QKMRZScannerViewDelegate?
     
     public var cutoutRect: CGRect {
@@ -275,7 +276,9 @@ extension QKMRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
             
             if let mrzTextImage = documentImage.cropping(to: mrzRegionRect) {
                 if let mrzResult = self.mrz(from: mrzTextImage), mrzResult.allCheckDigitsValid {
-                    self.stopScanning()
+                    if stopOnResult {
+                      self.stopScanning()
+                    }
                     
                     DispatchQueue.main.async {
                         let enlargedDocumentImage = self.enlargedDocumentImage(from: cgImage)

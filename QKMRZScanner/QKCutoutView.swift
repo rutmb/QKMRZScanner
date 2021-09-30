@@ -35,6 +35,9 @@ public class QKCutoutView: UIView {
     
     // MARK: Misc
     fileprivate func drawRectangleCutout() {
+        guard let cutoutRect = cutoutRect else {
+          return
+        }
         let maskLayer = CAShapeLayer()
         let path = CGMutablePath()
         let cornerRadius = CGFloat(3)

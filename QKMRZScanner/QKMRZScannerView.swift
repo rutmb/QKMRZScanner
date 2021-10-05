@@ -111,7 +111,9 @@ public class QKMRZScannerView: UIView {
         let imageWidth = CGFloat(cgImage.width)
         let imageHeight = CGFloat(cgImage.height)
         let rect = videoPreviewLayer.metadataOutputRectConverted(fromLayerRect: cutoutRect)
-        let videoOrientation = videoPreviewLayer.connection!.videoOrientation
+      guard let videoOrientation = videoPreviewLayer.connection?.videoOrientation else {
+        return .zero
+      }
         
         if videoOrientation == .portrait || videoOrientation == .portraitUpsideDown {
             return CGRect(x: (rect.minY * imageWidth), y: (rect.minX * imageHeight), width: (rect.height * imageWidth), height: (rect.width * imageHeight))
@@ -130,7 +132,10 @@ public class QKMRZScannerView: UIView {
         var croppingRect = cutoutRect(for: cgImage)
         let margin = (0.05 * croppingRect.height) // 5% of the height
         croppingRect = CGRect(x: (croppingRect.minX - margin), y: (croppingRect.minY - margin), width: croppingRect.width + (margin * 2), height: croppingRect.height + (margin * 2))
-        return UIImage(cgImage: cgImage.cropping(to: croppingRect)!)
+      guard let cgImage = cgImage.cropping(to: croppingRect) else {
+        return UIImage()
+      }
+      return UIImage(cgImage: cgImage)
     }
     
     // MARK: UIApplication Observers
@@ -255,8 +260,8 @@ extension QKMRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
         let documentImage = self.documentImage(from: cgImage)
         let imageRequestHandler = VNImageRequestHandler(cgImage: documentImage, options: [:])
         
-        let detectTextRectangles = VNDetectTextRectanglesRequest { [unowned self] request, error in
-            guard error == nil else {
+        let detectTextRectangles = VNDetectTextRectanglesRequest { [weak self] request, error in
+            guard let self = self, error == nil else {
                 return
             }
             
@@ -276,11 +281,14 @@ extension QKMRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
             
             if let mrzTextImage = documentImage.cropping(to: mrzRegionRect) {
                 if let mrzResult = self.mrz(from: mrzTextImage), mrzResult.allCheckDigitsValid {
-                    if stopOnResult {
+                  if self.stopOnResult {
                       self.stopScanning()
                     }
                     
-                    DispatchQueue.main.async {
+                    DispatchQueue.main.async { [weak self] in
+                      guard let self = self else {
+                        return
+                      }
                         let enlargedDocumentImage = self.enlargedDocumentImage(from: cgImage)
                         let scanResult = QKMRZScanResult(mrzResult: mrzResult, documentImage: enlargedDocumentImage)
                         self.delegate?.mrzScannerView(self, didFind: scanResult)

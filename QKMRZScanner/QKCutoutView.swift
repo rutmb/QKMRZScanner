@@ -30,11 +30,11 @@ public class QKCutoutView: UIView {
     public override func draw(_ rect: CGRect) {
         cutoutRect = calculateCutoutRect() // Orientation or the view's size could change
         layer.sublayers?.removeAll()
-        drawRectangleCutout()
+        drawRectangleCutout(progress)
     }
     
     // MARK: Misc
-    fileprivate func drawRectangleCutout() {
+  fileprivate func drawRectangleCutout(_ progress: CGFloat) {
         guard let cutoutRect = cutoutRect else {
           return
         }

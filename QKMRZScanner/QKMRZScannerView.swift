@@ -29,6 +29,14 @@ public class QKMRZScannerView: UIView {
     @objc public dynamic var isScanning = false
     public var vibrateOnResult = true
     public var stopOnResult = true
+    public var isMirrored: Bool? {
+      didSet {
+        if isMirrored == true {
+          videoPreviewLayer.connection?.automaticallyAdjustsVideoMirroring = false
+          videoPreviewLayer.connection?.isVideoMirrored = true
+        }
+      }
+    }
     public weak var delegate: QKMRZScannerViewDelegate?
     
     public var cutoutRect: CGRect {
@@ -208,7 +216,6 @@ public class QKMRZScannerView: UIView {
             
             videoPreviewLayer.session = captureSession
             videoPreviewLayer.videoGravity = .resizeAspectFill
-            
             layer.insertSublayer(videoPreviewLayer, at: 0)
         }
         else {
@@ -253,9 +260,16 @@ public class QKMRZScannerView: UIView {
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 extension QKMRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard let cgImage = CMSampleBufferGetImageBuffer(sampleBuffer)?.cgImage else {
+        guard var cgImage = CMSampleBufferGetImageBuffer(sampleBuffer)?.cgImage else {
             return
         }
+      if isMirrored == true {
+        var ciimage = CIImage(cgImage: cgImage)
+        ciimage = ciimage.transformed(by: .init(scaleX: -1, y: 1))
+        if let cgImageFlipped = ciimage.fetchCGImage() {
+          cgImage = cgImageFlipped
+        }
+      }
         
         let documentImage = self.documentImage(from: cgImage)
         let imageRequestHandler = VNImageRequestHandler(cgImage: documentImage, options: [:])
@@ -303,3 +317,16 @@ extension QKMRZScannerView: AVCaptureVideoDataOutputSampleBufferDelegate {
         try? imageRequestHandler.perform([detectTextRectangles])
     }
 }
+
+extension CIImage {
+  func fetchCGImage() -> CGImage? {
+      let context = CIContext(
+        options: [CIContextOption.useSoftwareRenderer: false]
+      )
+      if let cgImage = context.createCGImage(self, from: self.extent) {
+          return cgImage
+      }
+      return nil
+  }
+}
+
